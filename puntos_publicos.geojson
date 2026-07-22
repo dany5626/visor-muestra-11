@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"name": "puntos_publicos",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4189" } },
+"features": [
+{ "type": "Feature", "properties": { "id": null, "Nro": 34, "pdf_pub": "pdf/34.pdf", "Nombre": "Residencias Newport" }, "geometry": { "type": "Point", "coordinates": [ -66.828224643981045, 10.612850532075013 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 34, "pdf_pub": "pdf/34.pdf", "Nombre": "Residencias Arrecife" }, "geometry": { "type": "Point", "coordinates": [ -66.827116186138255, 10.612812350534686 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 35, "pdf_pub": "pdf/35.pdf", "Nombre": "Edificio Refugio del Caribe" }, "geometry": { "type": "Point", "coordinates": [ -66.82693363064854, 10.61202127674593 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 35, "pdf_pub": "pdf/35.pdf", "Nombre": "Edificio El Mamón" }, "geometry": { "type": "Point", "coordinates": [ -66.82539085778447, 10.612456784940347 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 35, "pdf_pub": "pdf/35.pdf", "Nombre": "Edificio Parque Azul" }, "geometry": { "type": "Point", "coordinates": [ -66.825216654506704, 10.612640533603198 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 48, "pdf_pub": "pdf/48.pdf", "Nombre": "Edificio Castromar" }, "geometry": { "type": "Point", "coordinates": [ -66.825865740692308, 10.610082370400926 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 35, "pdf_pub": "pdf/35.pdf", "Nombre": "Residencias Tanaguarena Mar" }, "geometry": { "type": "Point", "coordinates": [ -66.824080753681827, 10.611535655279837 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 36, "pdf_pub": "pdf/36.pdf", "Nombre": "Edificio Ibiza" }, "geometry": { "type": "Point", "coordinates": [ -66.821606112599028, 10.611559518742542 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 35, "pdf_pub": "pdf/36.pdf", "Nombre": "Residencias San Jorge" }, "geometry": { "type": "Point", "coordinates": [ -66.824846770834739, 10.612104798865413 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 46, "pdf_pub": "pdf/46.pdf", "Nombre": "Residencias Los Tamarindos III" }, "geometry": { "type": "Point", "coordinates": [ -66.841058761407425, 10.61020120449354 ] } },
+{ "type": "Feature", "properties": { "id": null, "Nro": 31, "pdf_pub": "pdf/31.pdf", "Nombre": "Residencias Aguamarina" }, "geometry": { "type": "Point", "coordinates": [ -66.844442030757179, 10.612256134880871 ] } }
+]
+}

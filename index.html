@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Visor Web SIG - Muestra 11 Puntos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    #map { height: 100vh; width: 100vw; }
+    
+    /* Panel de control flotante */
+    .panel {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-width: 290px;
+    }
+    .panel h3 { margin: 0 0 5px 0; font-size: 15px; color: #1e293b; }
+    .panel p { margin: 0 0 10px 0; font-size: 12px; color: #64748b; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .badge-pub { background: #e2e8f0; color: #475569; }
+    .badge-inst { background: #dcfce7; color: #166534; }
+    
+    button {
+      width: 100%;
+      padding: 8px 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1d4ed8; }
+    
+    /* Modal de Autenticación */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      width: 280px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal-content h4 { margin-top: 0; color: #0f172a; }
+    .modal-content input {
+      width: 90%;
+      padding: 8px;
+      margin: 8px 0 15px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Panel de control -->
+  <div class="panel">
+    <h3>Geoportal de Consulta</h3>
+    <p>Proyecto: visor-muestra-11</p>
+    <span id="estado-badge" class="badge badge-pub">Nivel: Público</span>
+    <button id="btn-login" onclick="abrirModal()">Acceso Institucional</button>
+  </div>
+
+  <!-- Modal Login -->
+  <div id="modal-login" class="modal">
+    <div class="modal-content">
+      <h4>Inicio de Sesión</h4>
+      <label style="font-size:12px;">Usuario:</label>
+      <input type="text" id="usuario" placeholder="Ej. admin">
+      <label style="font-size:12px;">Contraseña:</label>
+      <input type="password" id="clave" placeholder="••••••••">
+      <button onclick="validarLogin()">Ingresar</button>
+      <button onclick="cerrarModal()" style="background:#64748b; margin-top:5px;">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script>
+    // 1. Inicializar mapa
+    const map = L.map('map').setView([10.6000, -66.8000], 13);
+
+    // 2. Capa Base Satelital (Esri World Imagery)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Fuente: Esri, Maxar'
+    }).addTo(map);
+
+    let capaActual = null;
+    let esModoInstitucional = false;
+
+    const USER_CORRECTO = "admin";
+    const PASS_CORRECTO = "ucv2026";
+
+    // Función auxiliar para buscar propiedades ignorando Mayúsculas/Minúsculas
+    function getProp(props, posiblesNombres) {
+      if (!props) return null;
+      for (let nombre of posiblesNombres) {
+        // Buscar coincidencia exacta
+        if (props[nombre] !== undefined && props[nombre] !== null && props[nombre] !== "") {
+          return props[nombre];
+        }
+        // Buscar coincidencia sin importar mayúsculas
+        const keyMatch = Object.keys(props).find(k => k.toLowerCase() === nombre.toLowerCase());
+        if (keyMatch && props[keyMatch] !== undefined && props[keyMatch] !== null && props[keyMatch] !== "") {
+          return props[keyMatch];
+        }
+      }
+      return null;
+    }
+
+    // 3. Función principal de carga de capas
+    function cargarCapa(urlGeoJSON, esInstitucional) {
+      fetch(urlGeoJSON)
+        .then(response => response.json())
+        .then(data => {
+          if (capaActual) map.removeLayer(capaActual);
+
+          capaActual = L.geoJSON(data, {
+            pointToLayer: function (feature, latlng) {
+              return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: esInstitucional ? "#16a34a" : "#2563eb",
+                color: "#ffffff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.9
+              });
+            },
+            onEachFeature: function (feature, layer) {
+              const p = feature.properties;
+              
+              // Extraer atributos tolerando variaciones de nombre de columna
+              const nombre = getProp(p, ['Nombre', 'nombre', 'NOMBRE']) || 'Punto de Muestra';
+              const id = getProp(p, ['ID', 'id', 'Id', 'Nro', 'nro']);
+              const pdfPub = getProp(p, ['pdf_pub_Nro', 'pdf_pub', 'PDF_PUB', 'pdf_pub_nro']);
+              const pdfInst = getProp(p, ['pdf_ins', 'pdf_inst', 'PDF_INS', 'PDF_INST']);
+              const sector = getProp(p, ['Sector', 'sector']);
+              const direccion = getProp(p, ['Direccion', 'direccion', 'DIRECCION']);
+              const altura = getProp(p, ['Altura_mts', 'altura_mts', 'Altura', 'altura']);
+              const inclinacion = getProp(p, ['Inclinacio', 'inclinacio', 'Inclinacion', 'inclinacion']);
+              const observacion = getProp(p, ['Observacio', 'observacio', 'Observacion', 'observacion']);
+              const detalles = getProp(p, ['detalles', 'Detalles', 'DETALLES']);
+
+              // Construcción del Cuadro Emergente (Popup)
+              let popupHtml = `<strong style="font-size:14px; color:#0f172a;">${nombre}</strong>`;
+              if (id) popupHtml += `<br><small style="color:#64748b;">ID / Nro: ${id}</small>`;
+              popupHtml += `<hr style="border:0.5px solid #e2e8f0; margin:8px 0;">`;
+
+              // VISTA PÚBLICA
+              if (!esInstitucional) {
+                if (pdfPub) {
+                  popupHtml += `<a href="${pdfPub}" target="_blank" style="color:#2563eb; font-weight:bold;">📄 Consultar Documento Público</a>`;
+                } else {
+                  popupHtml += `<span style="color:#94a3b8; font-size:12px;">Sin archivo público asociado</span>`;
+                }
+              } 
+              // VISTA INSTITUCIONAL
+              else {
+                if (sector) popupHtml += `<small><b>Sector:</b> ${sector}</small><br>`;
+                if (direccion) popupHtml += `<small><b>Dirección:</b> ${direccion}</small><br>`;
+                if (altura) popupHtml += `<small><b>Altura:</b> ${altura} msnm</small><br>`;
+                if (inclinacion) popupHtml += `<small><b>Inclinación:</b> ${inclinacion}</small><br>`;
+                if (observacion) popupHtml += `<small><b>Observación:</b> ${observacion}</small><br>`;
+                if (detalles) popupHtml += `<small><b>Detalles:</b> ${detalles}</small><br>`;
+                
+                popupHtml += `<div style="margin-top:10px; padding-top:5px; border-top:1px dashed #cbd5e1;">`;
+                if (pdfPub) {
+                  popupHtml += `<a href="${pdfPub}" target="_blank" style="color:#2563eb; font-size:12px; display:block; margin-bottom:3px;">📄 PDF Público</a>`;
+                }
+                if (pdfInst) {
+                  popupHtml += `<a href="${pdfInst}" target="_blank" style="color:#16a34a; font-weight:bold; font-size:12px; display:block;">🔒 PDF Institucional / Ficha Técnica</a>`;
+                } else if (!pdfPub) {
+                  popupHtml += `<span style="color:#94a3b8; font-size:12px;">Sin documentos adjuntos</span>`;
+                }
+                popupHtml += `</div>`;
+              }
+
+              layer.bindPopup(popupHtml);
+            }
+          }).addTo(map);
+
+          // Auto-centrar en los puntos
+          if (data.features && data.features.length > 0) {
+            map.fitBounds(capaActual.getBounds(), { padding: [40, 40] });
+          }
+        })
+        .catch(err => console.error("Error al cargar GeoJSON:", err));
+    }
+
+    // Carga inicial
+    cargarCapa('puntos_publicos.geojson', false);
+
+    // Control del Modal y Sesión
+    function abrirModal() {
+      if (esModoInstitucional) {
+        esModoInstitucional = false;
+        document.getElementById('estado-badge').innerText = "Nivel: Público";
+        document.getElementById('estado-badge').className = "badge badge-pub";
+        document.getElementById('btn-login').innerText = "Acceso Institucional";
+        cargarCapa('puntos_publicos.geojson', false);
+      } else {
+        document.getElementById('modal-login').style.display = 'flex';
+      }
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-login').style.display = 'none';
+    }
+
+    function validarLogin() {
+      const u = document.getElementById('usuario').value;
+      const c = document.getElementById('clave').value;
+
+      if (u === USER_CORRECTO && c === PASS_CORRECTO) {
+        esModoInstitucional = true;
+        document.getElementById('estado-badge').innerText = "Nivel: Institucional";
+        document.getElementById('estado-badge').className = "badge badge-inst";
+        document.getElementById('btn-login').innerText = "Cerrar Sesión";
+        
+        cargarCapa('puntos_institucionales.geojson', true);
+        
+        cerrarModal();
+        document.getElementById('usuario').value = '';
+        document.getElementById('clave').value = '';
+      } else {
+        alert("Usuario o contraseña incorrectos.");
+      }
+    }
+  </script>
+</body>
+</html>
